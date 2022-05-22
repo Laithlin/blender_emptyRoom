@@ -96,13 +96,15 @@ class RoomScene(Scene):
 
         resources_dir: str = os.path.dirname(os.path.realpath(__file__)) + '/resources'
 
+        # do zapisywania obrazu glebi
+        self.png_scene = bpy.context.scene
         self.wall_thickness = 0.1
         self.margin_left_of_first_window = 0.3
         self.distance_between_windows = 0.3
         self.window_width: float = 3
         self.window_margin_top: float = 0.3
         self.window_margin_bottom: float = 0.3
-        self.num_windows: int = 13
+        self.num_windows: int = 2
         # wymiary pokoju sa za kazdym razem losowane
         self.size_x: float = random.randrange(2, 10)
         self.size_y: float = random.randrange(2, 10)
@@ -115,23 +117,23 @@ class RoomScene(Scene):
         self.path_to_wall_texture = resources_dir + '/wallpaper_texture.jpg'
 
     # usuwanie obiektow ktore sa zawsze jak otwiera sie nowa sesje w blenderze
-    # TODO sprawdzanie czy cos jest na scenie
-    def remove_default_objects(self):
-        # noinspection PyTypeChecker
-        # bpy.data.objects.remove(bpy.data.objects['Cube'], do_unlink=True)
-        # # noinspection PyTypeChecker
-        # bpy.data.objects.remove(bpy.data.objects['Camera'], do_unlink=True)
-        # # noinspection PyTypeChecker
-        # bpy.data.objects.remove(bpy.data.objects['Light'], do_unlink=True)
-
-        if "Cube" in bpy.data.meshes:
-            mesh_1 = bpy.data.meshes["Cube"]
-            mesh_2 = bpy.data.objects['Camera']
-            mesh_3 = bpy.data.objects['Light']
-            # print("removing mesh", mesh)
-            bpy.data.meshes.remove(mesh_1)
-            bpy.data.objects.remove(mesh_2)
-            bpy.data.objects.remove(mesh_3)
+    # # TODO sprawdzanie czy cos jest na scenie
+    # def remove_default_objects(self):
+    #     # noinspection PyTypeChecker
+    #     # bpy.data.objects.remove(bpy.data.objects['Cube'], do_unlink=True)
+    #     # # noinspection PyTypeChecker
+    #     # bpy.data.objects.remove(bpy.data.objects['Camera'], do_unlink=True)
+    #     # # noinspection PyTypeChecker
+    #     # bpy.data.objects.remove(bpy.data.objects['Light'], do_unlink=True)
+    #
+    #     if "Cube" in bpy.data.meshes:
+    #         mesh_1 = bpy.data.meshes["Cube"]
+    #         mesh_2 = bpy.data.objects['Camera']
+    #         mesh_3 = bpy.data.objects['Light']
+    #         # print("removing mesh", mesh)
+    #         bpy.data.meshes.remove(mesh_1)
+    #         bpy.data.objects.remove(mesh_2)
+    #         bpy.data.objects.remove(mesh_3)
 
     def build(self):
         self.world_texture: Optional[WorldTexture] = WorldTexture(
@@ -213,7 +215,8 @@ class RoomScene(Scene):
         ]
 
         if self.needs_sun:
-            objects.append(Sun(rotation=(degrees_to_radians(-45), degrees_to_radians(45), 0)))
+            objects.append(Sun(rotation=(self.PI / 2, 0, self.PI / 2),
+                               location=(self.size_x - 1, self.size_y / 2 - 0.2, 1 - 0.2)))
 
         self.objects = objects
 

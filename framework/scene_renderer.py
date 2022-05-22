@@ -17,7 +17,7 @@ class SceneRenderer(ABC):
         pass
 
     def render(self, scene: Scene):
-
+        self.modeler.remove_default_objects()
         self.modeler.initialize()
 
         if scene.world_texture is not None:
@@ -26,4 +26,4 @@ class SceneRenderer(ABC):
         for obj in scene.objects:
             self._render_object(obj)
 
-        self.modeler.remove_default_objects()
+

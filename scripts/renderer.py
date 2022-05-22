@@ -66,11 +66,11 @@ class Renderer(SceneRenderer):
         wall_object = self.modeler.create_box(wall.thickness, wall.width, wall.height, self._generate_new_id('wall'))
 
         # creating holes in the wall
-        # window_glass_objects = []
-        # for window in wall.windows:
-        #     self._cut_out_hole_for_window(wall, wall_object, window)
-        #     window_glass_objects.append(self._create_glass_for_window(window))
-        #
+        window_glass_objects = []
+        for window in wall.windows:
+            self._cut_out_hole_for_window(wall, wall_object, window)
+            # window_glass_objects.append(self._create_glass_for_window(window))
+
         # all_objects = [wall_object, *window_glass_objects]
 
         all_objects = [wall_object]
