@@ -98,42 +98,32 @@ class RoomScene(Scene):
 
         # do zapisywania obrazu glebi
         self.png_scene = bpy.context.scene
-        self.wall_thickness = 0.1
-        self.margin_left_of_first_window = 0.3
-        self.distance_between_windows = 0.3
-        self.window_width: float = 3
-        self.window_margin_top: float = 0.3
-        self.window_margin_bottom: float = 0.3
-        self.num_windows: int = 2
+
         # wymiary pokoju sa za kazdym razem losowane
         self.size_x: float = random.randrange(2, 10)
         self.size_y: float = random.randrange(2, 10)
         self.height: float = 3
         self.needs_sun: bool = True
+        self.wall_thickness = 0.1
+        self.num_windows: int = int(self.size_y / 2)
+        self.num_windows_sides: int = int(self.size_x / 2)
+        self.margin_left_of_first_window: float = (self.size_y - self.num_windows)/(self.num_windows + 1)
+        self.distance_between_windows: float = (self.size_y - self.num_windows)/(self.num_windows + 1)
+        print("margin_left_of_first_window: " + str(self.margin_left_of_first_window))
+        print("distance_between_windows: " + str(self.distance_between_windows))
+
+        self.margin_left_of_first_window_sides: float = (self.size_x - self.num_windows)/(self.num_windows + 1)
+        self.distance_between_windows_sides: float = (self.size_x - self.num_windows)/(self.num_windows + 1)
+
+        self.window_width: float = 1
+        self.window_margin_top: float = 1
+        self.window_margin_bottom: float = 1
+
 
         self.path_to_floor_texture = resources_dir + '/parquet_texture.jpg'
         self.path_to_sky_texture = resources_dir + '/sky_texture.jpg'
         self.path_to_ceiling_texture = resources_dir + '/ceiling_texture.jpg'
         self.path_to_wall_texture = resources_dir + '/wallpaper_texture.jpg'
-
-    # usuwanie obiektow ktore sa zawsze jak otwiera sie nowa sesje w blenderze
-    # # TODO sprawdzanie czy cos jest na scenie
-    # def remove_default_objects(self):
-    #     # noinspection PyTypeChecker
-    #     # bpy.data.objects.remove(bpy.data.objects['Cube'], do_unlink=True)
-    #     # # noinspection PyTypeChecker
-    #     # bpy.data.objects.remove(bpy.data.objects['Camera'], do_unlink=True)
-    #     # # noinspection PyTypeChecker
-    #     # bpy.data.objects.remove(bpy.data.objects['Light'], do_unlink=True)
-    #
-    #     if "Cube" in bpy.data.meshes:
-    #         mesh_1 = bpy.data.meshes["Cube"]
-    #         mesh_2 = bpy.data.objects['Camera']
-    #         mesh_3 = bpy.data.objects['Light']
-    #         # print("removing mesh", mesh)
-    #         bpy.data.meshes.remove(mesh_1)
-    #         bpy.data.objects.remove(mesh_2)
-    #         bpy.data.objects.remove(mesh_3)
 
     def build(self):
         self.world_texture: Optional[WorldTexture] = WorldTexture(
@@ -188,15 +178,26 @@ class RoomScene(Scene):
                                   material=window_material),
                            )
 
-        wall_right = Wall(thickness=self.wall_thickness, height=self.height, windows=windows, x0=0, y0=self.size_y,
+        windows_sides: List[Window] = []
+
+        for i in range(0, self.num_windows_sides):
+            windows_sides.append(Window(margin_bottom=self.window_margin_bottom,
+                                  height=self.height - self.window_margin_top - self.window_margin_bottom,
+                                  width=self.window_width,
+                                  margin_left=self.margin_left_of_first_window_sides + i * (
+                                          self.window_width + self.distance_between_windows_sides),
+                                  material=window_material),
+                           )
+
+        wall_right = Wall(thickness=self.wall_thickness, height=self.height, windows=windows_sides, x0=0, y0=self.size_y,
                           x1=self.size_x, y1=self.size_y)
         wall_right.material = wall_material
 
-        wall_front = Wall(thickness=self.wall_thickness, height=self.height, windows=[], x0=0, y0=0,
+        wall_front = Wall(thickness=self.wall_thickness, height=self.height, windows=windows, x0=0, y0=0,
                           x1=0, y1=self.size_y)
         wall_front.material = wall_material
 
-        wall_left = Wall(thickness=self.wall_thickness, height=self.height, windows=[], x0=0, y0=0,
+        wall_left = Wall(thickness=self.wall_thickness, height=self.height, windows=windows_sides, x0=0, y0=0,
                          x1=self.size_x, y1=0)
         wall_left.material = wall_material
 

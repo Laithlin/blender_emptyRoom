@@ -69,11 +69,11 @@ class Renderer(SceneRenderer):
         window_glass_objects = []
         for window in wall.windows:
             self._cut_out_hole_for_window(wall, wall_object, window)
-            # window_glass_objects.append(self._create_glass_for_window(window))
+            window_glass_objects.append(self._create_glass_for_window(window))
 
-        # all_objects = [wall_object, *window_glass_objects]
+        all_objects = [wall_object, *window_glass_objects]
 
-        all_objects = [wall_object]
+        # all_objects = [wall_object]
 
         material = self._get_modeler_material(wall.material)
         self.modeler.assign_material_to_object(material, wall_object)
