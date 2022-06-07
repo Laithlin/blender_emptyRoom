@@ -6,6 +6,7 @@ import random
 import numpy as np
 import cv2
 from PIL import Image
+import matplotlib.pyplot as plt
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 # print(os.path.dirname(os.path.realpath(__file__)))
@@ -30,6 +31,8 @@ print(bpy.context.preferences.addons["cycles"].preferences.compute_device_type)
 for d in bpy.context.preferences.addons["cycles"].preferences.devices:
     d["use"] = 1 # Using all devices, include GPU and CPU
     print(d["name"], d["use"])
+
+bpy.context.scene.cycles.samples = 100
 
 def create_walls():
     scene = RoomScene()
@@ -236,14 +239,59 @@ def save_image_render(scene):
 
     bpy.context.scene.camera = bpy.data.objects['Camera']
 
+    #moje
+
+    bpy.context.scene.use_nodes = True
+    tree = bpy.context.scene.node_tree
+    links = tree.links
+
+    # clear default nodes
+    for n in tree.nodes:
+        tree.nodes.remove(n)
+
+    scene = bpy.context.scene
+    scene.view_layers["ViewLayer"].use_pass_z = True
+    scene.use_nodes = True
+
+    nodes = scene.node_tree.nodes
+    rl = tree.nodes.new('CompositorNodeRLayers')
+    norm = tree.nodes.new('CompositorNodeNormalize')
+    compositor = tree.nodes.new('CompositorNodeComposite')
+    view = tree.nodes.new('CompositorNodeViewer')
+
+    links.new(rl.outputs[0], compositor.inputs[0])
+    links.new(rl.outputs[2], norm.inputs[0])
+    links.new(norm.outputs[0], view.inputs[0])
+
+    # # create a file output node and set the path
+    # fileOutput = tree.nodes.new(type="CompositorNodeOutputFile")
+    # fileOutput.base_path = "/home/justyna/All/magisterka/"
+    # fileOutput.file_slots[0].path = 'depth_sprawdzmy.png'
+    # links.new(norm.outputs[0], fileOutput.inputs[0])
+
+    # bpy.context.scene.render.filepath = "/home/justyna/All/magisterka/rgb.png"
+    bpy.ops.render.render(False, animation=False, write_still=True)
+
+    dmap = get_depth()
+    dmap = dmap * 255
+    # # print(dmap)
+    #
+    cv2.imwrite("sprawdzmy_pokoje.png", dmap)
+
     #####################################
     # teoretycznie dziala ale wypluwa jakis dziwny obraz
     # bpy.context.scene.render.filepath = "/home/justyna/All/magisterka/depth.png"
     # bpy.ops.render.render(False, animation=False, write_still=True)
     # dmap = get_depth()
     # nmap = dmap2norm(dmap)
-    # # np.savez_compressed("d.npz", dmap=dmap, nmap=nmap)
+    # np.savez_compressed("d.npz", dmap=dmap, nmap=nmap)
     #
+    # images = np.load("d.npz")
+    # # images.shape
+    # plt.ion()
+    # plt.figure()
+    # plt.imshow(images)
+
     # nmap = nmap * 255
     # nmap = nmap.astype(np.uint8)
     #
@@ -415,45 +463,46 @@ def save_image_render(scene):
 
     #########################################
 
-    # Set up rendering of depth map:
-    bpy.context.scene.use_nodes = True
-    tree = bpy.context.scene.node_tree
-    links = tree.links
-
-    # clear default nodes
-    for n in tree.nodes:
-        tree.nodes.remove(n)
-
-    # create input render layer node
-    rl = tree.nodes.new('CompositorNodeRLayers')
-
-    map = tree.nodes.new(type="CompositorNodeMapValue")
-    # Size is chosen kind of arbitrarily, try out until you're satisfied with resulting depth map.
-    map.size = [30]
-    map.use_min = True
-    map.min = [0]
-    map.use_max = True
-    map.max = [255]
-    links.new(rl.outputs[2], map.inputs[0])
-
-    invert = tree.nodes.new(type="CompositorNodeInvert")
-    invert.invert_alpha = False
-    invert.invert_rgb = False
-    links.new(map.outputs[0], invert.inputs[1])
-
-    # The viewer can come in handy for inspecting the results in the GUI
-    depthViewer = tree.nodes.new(type="CompositorNodeViewer")
-    links.new(invert.outputs[0], depthViewer.inputs[0])
-    # Use alpha from input.
-    links.new(rl.outputs[1], depthViewer.inputs[1])
-
-    # create a file output node and set the path
-    fileOutput = tree.nodes.new(type="CompositorNodeOutputFile")
-    fileOutput.base_path = "/home/justyna/All/magisterka/"
-    fileOutput.file_slots[0].path = 'depth2.png'
-    links.new(invert.outputs[0], fileOutput.inputs[0])
-
-    bpy.ops.render.render(write_still=True)
+    # # Set up rendering of depth map:
+    # bpy.context.scene.use_nodes = True
+    # tree = bpy.context.scene.node_tree
+    # links = tree.links
+    #
+    # # clear default nodes
+    # for n in tree.nodes:
+    #     tree.nodes.remove(n)
+    #
+    # # create input render layer node
+    # rl = tree.nodes.new('CompositorNodeRLayers')
+    #
+    # map = tree.nodes.new(type="CompositorNodeMapValue")
+    # # Size is chosen kind of arbitrarily, try out until you're satisfied with resulting depth map.
+    # map.size = [30]
+    # map.use_min = True
+    # map.min = [0]
+    # map.use_max = True
+    # map.max = [255]
+    # links.new(rl.outputs[2], map.inputs[0])
+    #
+    # invert = tree.nodes.new(type="CompositorNodeInvert")
+    # invert.invert_alpha = False
+    # invert.invert_rgb = False
+    # links.new(map.outputs[0], invert.inputs[1])
+    #
+    # # The viewer can come in handy for inspecting the results in the GUI
+    # depthViewer = tree.nodes.new(type="CompositorNodeViewer")
+    # links.new(invert.outputs[0], depthViewer.inputs[0])
+    # # Use alpha from input.
+    # links.new(rl.outputs[1], depthViewer.inputs[1])
+    #
+    # # create a file output node and set the path
+    # fileOutput = tree.nodes.new(type="CompositorNodeOutputFile")
+    # fileOutput.format.color_depth = '16'
+    # fileOutput.base_path = "/home/justyna/All/magisterka/"
+    # fileOutput.file_slots[0].path = 'depth2.png'
+    # links.new(invert.outputs[0], fileOutput.inputs[0])
+    #
+    # bpy.ops.render.render(write_still=True)
 
 
 if __name__ == '__main__':
