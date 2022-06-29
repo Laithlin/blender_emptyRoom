@@ -15,24 +15,41 @@ from scripts.renderer import Renderer
 from scripts.modeler import Modeler
 
 
-bpy.data.scenes[0].render.engine = "CYCLES"
+def changeGPU():
+    bpy.data.scenes[0].render.engine = "CYCLES"
 
-# Set the device_type
-bpy.context.preferences.addons[
-    "cycles"
-].preferences.compute_device_type = "CUDA" # or "OPENCL"
+    # Set the device_type
+    bpy.context.preferences.addons[
+        "cycles"
+    ].preferences.compute_device_type = "CUDA" # or "OPENCL"
 
-# Set the device and feature set
-bpy.context.scene.cycles.device = "GPU"
+    # Set the device and feature set
+    bpy.context.scene.cycles.device = "GPU"
 
-# get_devices() to let Blender detects GPU device
-bpy.context.preferences.addons["cycles"].preferences.get_devices()
-print(bpy.context.preferences.addons["cycles"].preferences.compute_device_type)
-for d in bpy.context.preferences.addons["cycles"].preferences.devices:
-    d["use"] = 1 # Using all devices, include GPU and CPU
-    print(d["name"], d["use"])
+    # get_devices() to let Blender detects GPU device
+    bpy.context.preferences.addons["cycles"].preferences.get_devices()
+    print(bpy.context.preferences.addons["cycles"].preferences.compute_device_type)
+    for d in bpy.context.preferences.addons["cycles"].preferences.devices:
+        if d["name"] == "NVIDIA GeForce GTX 960M (Display)":
+            d["use"] = 1 # Using all devices, include GPU and CPU
+        else:
+            d["use"] = 0
+        print(d["name"], d["use"])
 
-bpy.context.scene.cycles.samples = 100
+    # change settings
+    scene = bpy.context.scene
+    scene.cycles.samples = 100
+    scene.render.resolution_x = 640
+    scene.render.resolution_y = 480
+
+    settings = scene.render.image_settings
+    settings.color_depth = '16'
+    settings.file_format = 'PNG'
+
+    # print(bpy.context.scene)
+    # scene.screen.View3DShading.studiolight_intensity = 0
+
+
 
 def create_walls():
     scene = RoomScene()
@@ -197,7 +214,38 @@ def render_scenes():
                  'pianos', 'dressers', 'standing_lamps',
                  'bookshelfs', 'speakers'],
                 scene)
-    save_image_render(scene)
+    # save_image_render(scene)
+    change_camera_place(scene, 2)
+
+def change_camera_place(scene, number):
+    #na 8m chyba najdalej siega kinect
+    #losuje wartosc 0 lub 1 zeby zdecydowac na ktora sciane patrzy
+    x_or_y = random.randrange(0, 2)
+    # print(x_or_y)
+
+    #jak 0 to patrzy na y
+    # if x_or_y == 0:
+    #     # scene.camera_location = (scene.size_x, scene.size_y / 2, 1)
+    #     scene.camera_rotation = (scene.PI / 2, 0, scene.PI / 2) #scene.PI / 2
+    bpy.ops.object.select_all(action='DESELECT')
+    scene.camera_rotation = (0, 0, 0)
+    bpy.data.objects['Camera'].select_set(True)
+    bpy.ops.object.delete()
+    #trzeba bedzie dodac od nowa kamere ale w innym miejscu
+    # create the first camera
+    # cam = bpy.data.cameras.new("Camera")
+    # cam.lens = 18
+
+    # scn = bpy.context.scene
+    # # create the first camera object
+    # cam_obj1 = bpy.data.objects.new("Camera", cam)
+    # cam_obj1.location = (9.69, -10.85, 12.388)
+    # cam_obj1.rotation_euler = (0.6799, 0, 0.8254)
+    location = (3, scene.size_y / 2, 1)
+    orientation = (scene.PI / 2, 0, scene.PI / 2)
+    bpy.ops.object.camera_add(location=list(location), rotation=list(orientation))
+    bpy.context.selected_objects[0].name = "Camera"
+
 
 
 def get_depth():
@@ -205,6 +253,7 @@ def get_depth():
     :return: The depth map of the rendered camera view as a numpy array of size (H,W).
     """
     z = bpy.data.images['Viewer Node']
+    # print(z.pixels)
     w, h = z.size
     dmap = np.array(z.pixels[:], dtype=np.float32) # convert to numpy array
     dmap = np.reshape(dmap, (h, w, 4))[:,:,0]
@@ -213,31 +262,12 @@ def get_depth():
     return dmap
 
 
-def dmap2norm(dmap):
-    """Computes surface normals from a depth map.
-    :param dmap: A grayscale depth map image as a numpy array of size (H,W).
-    :return: The corresponding surface normals map as numpy array of size (H,W,3).
-    """
-    zx = cv2.Sobel(dmap, cv2.CV_64F, 1, 0, ksize=5)
-    zy = cv2.Sobel(dmap, cv2.CV_64F, 0, 1, ksize=5)
-
-    # convert to unit vectors
-    normal = np.dstack((-zx, -zy, np.ones_like(dmap)))
-    n = np.linalg.norm(normal, axis=2)
-    normal[:, :, 0] /= n
-    normal[:, :, 1] /= n
-    normal[:, :, 2] /= n
-
-    # offset and rescale values to be in 0-1
-    normal += 1
-    normal /= 2
-    return normal[:, :, ::-1].astype(np.float32)
-
-
 def save_image_render(scene):
     bpy.ops.export_scene.obj(filepath="/home/justyna/All/magisterka/pusty.obj")
 
+    # change_camera_place(scene, 2)
     bpy.context.scene.camera = bpy.data.objects['Camera']
+    bpy.context.view_layer.objects.active = bpy.data.objects['Sun']
 
     #moje
 
@@ -250,6 +280,11 @@ def save_image_render(scene):
         tree.nodes.remove(n)
 
     scene = bpy.context.scene
+
+    # settings = scene.render.image_settings
+    # settings.color_depth = '16'
+    # settings.file_format = 'PNG'
+
     scene.view_layers["ViewLayer"].use_pass_z = True
     scene.use_nodes = True
 
@@ -260,8 +295,10 @@ def save_image_render(scene):
     view = tree.nodes.new('CompositorNodeViewer')
 
     links.new(rl.outputs[0], compositor.inputs[0])
-    links.new(rl.outputs[2], norm.inputs[0])
-    links.new(norm.outputs[0], view.inputs[0])
+    # links.new(rl.outputs[2], norm.inputs[0])
+    # links.new(norm.outputs[0], view.inputs[0])
+
+    links.new(rl.outputs[2], view.inputs[0])
 
     # # create a file output node and set the path
     # fileOutput = tree.nodes.new(type="CompositorNodeOutputFile")
@@ -269,243 +306,30 @@ def save_image_render(scene):
     # fileOutput.file_slots[0].path = 'depth_sprawdzmy.png'
     # links.new(norm.outputs[0], fileOutput.inputs[0])
 
-    # bpy.context.scene.render.filepath = "/home/justyna/All/magisterka/rgb.png"
+    bpy.context.scene.render.filepath = "/home/justyna/All/magisterka/rgb.png"
     bpy.ops.render.render(False, animation=False, write_still=True)
 
     dmap = get_depth()
-    dmap = dmap * 255
-    # # print(dmap)
-    #
-    cv2.imwrite("sprawdzmy_pokoje.png", dmap)
+    print(dmap)
+    for pixel in range(len(dmap)):
+        # print("sprawdzmy")
+        # print(len(dmap[pixel]))
+        for pix in range(len(dmap[pixel])):
+            if dmap[pixel][pix] >= 7:
+                dmap[pixel][pix] = 100000000
+            else:
+                dmap[pixel][pix] = dmap[pixel][pix]*1000
+    print("koniec")
 
-    #####################################
-    # teoretycznie dziala ale wypluwa jakis dziwny obraz
-    # bpy.context.scene.render.filepath = "/home/justyna/All/magisterka/depth.png"
-    # bpy.ops.render.render(False, animation=False, write_still=True)
-    # dmap = get_depth()
-    # nmap = dmap2norm(dmap)
-    # np.savez_compressed("d.npz", dmap=dmap, nmap=nmap)
-    #
-    # images = np.load("d.npz")
-    # # images.shape
-    # plt.ion()
-    # plt.figure()
-    # plt.imshow(images)
+    print(dmap)
+    dmap_w = np.array(dmap, dtype=np.uint16)
 
-    # nmap = nmap * 255
-    # nmap = nmap.astype(np.uint8)
-    #
-    # im = Image.fromarray(nmap)
-    # im.save("/home/justyna/All/magisterka/your_file.png")
+    cv2.imwrite("sprawdzmy_pokoje2.png", dmap_w)
 
-    ####################################
-    # DZIALAAAA
-    # # Set save path
-    # sce = bpy.context.scene.name
-    # bpy.data.scenes[sce].render.filepath = "/home/justyna/All/magisterka/depth.png"
-    #
-    # # Go into camera-view (optional)
-    # for area in bpy.context.screen.areas:
-    #     if area.type == 'VIEW_3D':
-    #         area.spaces[0].region_3d.view_perspective = 'CAMERA'
-    #         break
-    #
-    # # Render image through viewport
-    # bpy.ops.render.opengl(write_still=True)
-
-    ######################################
-
-    #TODO: tez dziala
-
-    # scene = bpy.context.scene
-    # scene.render.image_settings.color_depth = '16'
-    # scene.display_settings.display_device = 'sRGB'
-    # scene.view_settings.view_transform = 'Raw'
-    # scene.sequencer_colorspace_settings.name = 'Raw'
-    # scene.use_nodes = True
-    # for node in scene.node_tree.nodes:
-    #     scene.node_tree.nodes.remove(node)
-    # renderNode = scene.node_tree.nodes.new('CompositorNodeRLayers')
-    #
-    # depthOutputNode = scene.node_tree.nodes.new('CompositorNodeOutputFile')
-    # depthOutputNode.format.file_format = 'PNG'
-    # depthOutputNode.format.color_depth = '16'
-    # depthOutputNode.format.color_mode = 'BW'
-    # depthOutputNode.base_path = '/home/justyna/All/magisterka/'
-    # depthOutputNode.file_slots[0].path = 'depth.png'
-    #
-    # scene.node_tree.links.new(renderNode.outputs[2], depthOutputNode.inputs[0])
-    #
-    # bpy.ops.render.render(write_still=True)
-
-    ################################
-    # scene.render.image_settings.file_format = 'PNG'
-    # image = bpy.data.images["Viewer Node"]
-
-    # image = bpy.data.images.new("view", alpha=True, width=16, height=16)
-    # # print(image)
-    # # image.use_alpha = True
-    # # image.alpha_mode = 'STRAIGHT'
-    # image.filepath = "/home/justyna/All/magisterka/depth.png"
-    # image.file_format = 'PNG'
-    # # image.save_render("/home/justyna/All/magisterka/depth2.png", scene=scene)
-    # image.save()
-    # select = bpy.ops.object.select_all(action='SELECT')
-    # scene.objects.link(select)
-    # scene.render.image_settings.file_format = 'PNG'
-    # scene.render.filepath = "/home/justyna/All/magisterka/depth.png"
-    # bpy.ops.render.render(write_still=1)
-
-    # depth = np.asarray(bpy.data.images["Viewer Node"].pixels)
-    # depth = np.reshape(depth, (512, 128, 4))
-    # depth = depth[:, :, 0]
-    # depth = np.flipud(depth)
-    # depth = reverse_mapping(depth)
-
-    # np.save("/home/justyna/All/magisterka/depth.npy", depth)
-
-    # wersja nie wiem ktora
-    ###########################################################33
-    # image = bpy.data.images.new("depth", width=1024, height=1024, alpha=True, float_buffer=True)
-    #
-    # # solid white image
-    # pixels = [1.0] * (1000 * 1000 * 16)
-    #
-    # # set pixels
-    # image.pixels = pixels
-    # print(image.channels)
-    #
-    # # save image
-    # # settings = bpy.context.scene.split_map_settings
-    # image.filepath = "/home/justyna/All/magisterka/depth.png"
-    # # image.filepath_raw = settings.test_save_path
-    # # image.alpha_mode = 'STRAIGHT'
-    # image.file_format = 'PNG'
-    # # image.generated_color = (0.2, 0.5, 0.4, 0.0)
-    # image.generated_type = 'BLANK'
-    # image.update()
-    # # image.save_render("/home/justyna/All/magisterka/depth2.png")
-    # image.save()
-
-    ###################################
-
-    # scene = bpy.context.scene
-    #
-    # # 解像度を設定
-    # # bpy.context.scene.render.resolution_x = scene.resolution_x
-    # # bpy.context.scene.render.resolution_y = scene.resolution_y
-    # # bpy.context.scene.render.resolution_percentage = scene.resolution_percentage
-    #
-    # # node を切り替えて、作成したnodeにレンダリング結果を出力
-    # bpy.context.scene.use_nodes = True
-    # tree = bpy.context.scene.node_tree
-    # links = tree.links
-    # # default node をクリア
-    # for n in tree.nodes:
-    #     tree.nodes.remove(n)
-    # # input render layer node 作成
-    # rl = tree.nodes.new('CompositorNodeRLayers')
-    # rl.location = 180, 280
-    # # output node 作成
-    # v = tree.nodes.new('CompositorNodeViewer')
-    # v.location = 750, 210
-    # v.use_alpha = False
-    #
-    # links.new(rl.outputs[2], v.inputs[0])
-    #
-    # for o in scene.objects:
-    #     if o.type == 'CAMERA':
-    #         # turning FOV
-    #         # o.data.angle = 1.026 * o.data.angle
-    #
-    #         # set active camera
-    #         bpy.context.scene.camera = o
-    #
-    #         # render
-    #         bpy.ops.render.render()
-    #         # get rendering result image
-    #         pixels = np.array(bpy.data.images['Viewer Node'].pixels)
-    #
-    #         # 現実とBlender内の長さの比率を導出
-    #         real_far_distance = scene.real_far_distance  # メートル
-    #         real_near_distance = scene.real_near_distance  # メートル
-    #         blender = scene.length_blender_exsample
-    #         real = scene.length_real_exsample
-    #         blender_real_ratio = blender / real
-    #
-    #         blender_far_distance = blender_real_ratio * real_far_distance
-    #         blender_near_distance = blender_real_ratio * real_near_distance
-    #         distance = blender_far_distance - blender_near_distance
-    #         # print('blender_real_ratio ', blender_real_ratio)
-    #         # print('blender_far_distance ',blender_far_distance)
-    #         # print('blender_near_distance ',blender_near_distance)
-    #
-    #         # デプス(カメラからの距離情報)を色データとして画素に保存
-    #         for i in range(np.shape(pixels)[0]):
-    #             if pixels[i] > blender_far_distance:
-    #                 pixels[i] = 1.0
-    #             elif pixels[i] < blender_near_distance:
-    #                 pixels[i] = 0.0
-    #             else:
-    #                 pixels[i] = (pixels[i] - blender_near_distance) / distance
-    #                 if i % 4 == 0:
-    #                     print('pixels[i] ', pixels[i])
-    #
-    #         # gamma 補正を除去
-    #         pixels[0::4] = np.power(pixels[0::4], 2.27195)
-    #         pixels[1::4] = np.power(pixels[1::4], 2.27195)
-    #         pixels[2::4] = np.power(pixels[2::4], 2.27195)
-    #
-    #         # alpha = 1.0
-    #         pixels[3::4] = 1.0
-    #         bpy.data.images['Viewer Node'].pixels = pixels
-    #         bpy.data.images['Viewer Node'].save_render(filepath='/home/justyna/All/magisterka/depth2.png')
-
-    #########################################
-
-    # # Set up rendering of depth map:
-    # bpy.context.scene.use_nodes = True
-    # tree = bpy.context.scene.node_tree
-    # links = tree.links
-    #
-    # # clear default nodes
-    # for n in tree.nodes:
-    #     tree.nodes.remove(n)
-    #
-    # # create input render layer node
-    # rl = tree.nodes.new('CompositorNodeRLayers')
-    #
-    # map = tree.nodes.new(type="CompositorNodeMapValue")
-    # # Size is chosen kind of arbitrarily, try out until you're satisfied with resulting depth map.
-    # map.size = [30]
-    # map.use_min = True
-    # map.min = [0]
-    # map.use_max = True
-    # map.max = [255]
-    # links.new(rl.outputs[2], map.inputs[0])
-    #
-    # invert = tree.nodes.new(type="CompositorNodeInvert")
-    # invert.invert_alpha = False
-    # invert.invert_rgb = False
-    # links.new(map.outputs[0], invert.inputs[1])
-    #
-    # # The viewer can come in handy for inspecting the results in the GUI
-    # depthViewer = tree.nodes.new(type="CompositorNodeViewer")
-    # links.new(invert.outputs[0], depthViewer.inputs[0])
-    # # Use alpha from input.
-    # links.new(rl.outputs[1], depthViewer.inputs[1])
-    #
-    # # create a file output node and set the path
-    # fileOutput = tree.nodes.new(type="CompositorNodeOutputFile")
-    # fileOutput.format.color_depth = '16'
-    # fileOutput.base_path = "/home/justyna/All/magisterka/"
-    # fileOutput.file_slots[0].path = 'depth2.png'
-    # links.new(invert.outputs[0], fileOutput.inputs[0])
-    #
-    # bpy.ops.render.render(write_still=True)
 
 
 if __name__ == '__main__':
+    changeGPU()
     render_scenes()
 
     # bpy.ops.export_scene.obj(filepath="/home/justyna/All/magisterka/pusty.obj")

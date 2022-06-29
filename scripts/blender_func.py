@@ -100,8 +100,8 @@ class RoomScene(Scene):
         self.png_scene = bpy.context.scene
 
         # wymiary pokoju sa za kazdym razem losowane
-        self.size_x: float = random.randrange(2, 10)
-        self.size_y: float = random.randrange(2, 10)
+        self.size_x: float = random.randrange(3, 11)
+        self.size_y: float = random.randrange(3, 11)
         self.height: float = 3
         self.needs_sun: bool = True
         self.wall_thickness = 0.1
@@ -112,13 +112,16 @@ class RoomScene(Scene):
         print("margin_left_of_first_window: " + str(self.margin_left_of_first_window))
         print("distance_between_windows: " + str(self.distance_between_windows))
 
-        self.margin_left_of_first_window_sides: float = (self.size_x - self.num_windows)/(self.num_windows + 1)
-        self.distance_between_windows_sides: float = (self.size_x - self.num_windows)/(self.num_windows + 1)
+        self.margin_left_of_first_window_sides: float = (self.size_x - self.num_windows_sides)/(self.num_windows_sides + 1)
+        self.distance_between_windows_sides: float = (self.size_x - self.num_windows_sides)/(self.num_windows_sides + 1)
 
         self.window_width: float = 1
         self.window_margin_top: float = 1
         self.window_margin_bottom: float = 1
 
+        self.camera_location = (3, self.size_y / 2, 1)
+        self.camera_rotation = (self.PI / 2, 0, self.PI / 2)
+        self.camera = Camera(location=self.camera_location, rotation=self.camera_rotation)
 
         self.path_to_floor_texture = resources_dir + '/parquet_texture.jpg'
         self.path_to_sky_texture = resources_dir + '/sky_texture.jpg'
@@ -212,7 +215,7 @@ class RoomScene(Scene):
             wall_right, wall_front, wall_left, wall_back,
             floor,
             ceiling,
-            Camera(location=(self.size_x, self.size_y / 2, 1), rotation=(self.PI / 2, 0, self.PI / 2))
+            self.camera
         ]
 
         if self.needs_sun:
