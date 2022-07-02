@@ -66,7 +66,7 @@ def create_walls():
     return scene
 
 
-def place_model(model, scene, place, obj_place=[1, 1], scale=1.0):
+def place_model(model, scene, l_furniture, scale=1.0):
     dir = '../mgr_przydatne/' + model
     filename = random.choice(os.listdir(dir))
     path = os.path.join(dir, filename, 'model.obj')
@@ -77,7 +77,8 @@ def place_model(model, scene, place, obj_place=[1, 1], scale=1.0):
     # sie nie jako pokedynczy obiekt i jest problem z przesuwaniem
     imported_object = bpy.ops.import_scene.obj(filepath=file_loc, use_split_objects=False)
     obj_object = bpy.context.selected_objects[0]
-    # print(obj_object.dimensions)
+    print("dimensions:")
+    print(obj_object.dimensions)
 
     obj_object.scale[0] *= scale
     obj_object.scale[1] *= scale
@@ -86,16 +87,23 @@ def place_model(model, scene, place, obj_place=[1, 1], scale=1.0):
     # print(obj_object.dimensions[1])
     if(model == 'chandeliers'):
         move_chandeliers(obj_object, scene)
+        return np.array([0, 0])
     else:
-        move_object(obj_object, scene, place, obj_place=obj_place, scale=scale)
+        move_object(obj_object, scene, l_fur=l_furniture, scale=scale)
+        return np.array([obj_object.dimensions[0]*scale, obj_object.dimensions[2]*scale])
 
 
-def move_object(obj_object, scene, place, obj_place, scale):
+def move_object(obj_object, scene, l_fur, scale):
     # (x,y,z) x to czerowna, y do gory, z to zielona
     # czerwona na plus, zielona na minus i wtedy jest w pokoju
-    vec = mathutils.Vector(((obj_object.dimensions[0] / 2 * obj_place[0]) * scale + scene.size_x * place[0] + scene.wall_thickness,
+    # vec = mathutils.Vector(((obj_object.dimensions[0] / 2 * obj_place[0]) * scale + l_fur[0] + scene.size_x * place[0] + scene.wall_thickness,
+    #                         (obj_object.dimensions[1] / 2) * scale + 0.02,
+    #                         -((obj_object.dimensions[2] / 2 * obj_place[1]) * scale + scene.size_y * place[1] + scene.wall_thickness)))
+
+    vec = mathutils.Vector(((obj_object.dimensions[0] / 2) * scale + scene.wall_thickness,
                             (obj_object.dimensions[1] / 2) * scale + 0.02,
-                            -((obj_object.dimensions[2] / 2 * obj_place[1]) * scale + scene.size_y * place[1] + scene.wall_thickness)))
+                            -((obj_object.dimensions[2] / 2) * scale + l_fur[1])))
+
     inv = obj_object.matrix_world.copy()
     inv.invert()
     # vec aligned to local axis in Blender 2.8+
@@ -167,17 +175,27 @@ def delete_furniture(loop):
 
 
 def render_room(furniture_const, furniture, scene):
+    last_furniture = np.array([scene.wall_thickness, scene.wall_thickness])
 
     more_furniture = random_furniture(scene, furniture_const, furniture)
     print(more_furniture)
-    place_model('chandeliers', scene, None)
-    place_model(furniture_const[0], scene, [0, 0], scale=2)
-    place_model(furniture_const[1], scene, [0, 4 / 6])
-    place_model(furniture_const[2], scene, [1 / 3, 1], obj_place=[1, -2])
+    last_furniture += place_model('chandeliers', scene, last_furniture)
+    print("check dimensions:")
+    print(last_furniture)
+    last_furniture += place_model(furniture_const[0], scene, last_furniture, scale=2)
+    print("check dimensions:")
+    print(last_furniture)
+    last_furniture += place_model(furniture_const[1], scene, last_furniture)
+    print("check dimensions:")
+    print(last_furniture)
+    last_furniture += place_model(furniture_const[2], scene, last_furniture)
+    print("check dimensions:")
+    print(last_furniture)
 
     for i in range(len(more_furniture)):
-        place_model(furniture[more_furniture[i]], scene,
-                    [(1 / 2 - i) / (i + 1) + i / len(more_furniture), i / len(more_furniture)])
+        last_furniture += place_model(furniture[more_furniture[i]], scene, last_furniture)
+        print("check dimensions:")
+        print(last_furniture)
 
     loop = len(furniture_const) + len(more_furniture)
 
@@ -232,17 +250,23 @@ def change_camera_place(scene, number):
     bpy.data.objects['Camera'].select_set(True)
     bpy.ops.object.delete()
     #trzeba bedzie dodac od nowa kamere ale w innym miejscu
-    # create the first camera
-    # cam = bpy.data.cameras.new("Camera")
-    # cam.lens = 18
 
-    # scn = bpy.context.scene
-    # # create the first camera object
-    # cam_obj1 = bpy.data.objects.new("Camera", cam)
-    # cam_obj1.location = (9.69, -10.85, 12.388)
-    # cam_obj1.rotation_euler = (0.6799, 0, 0.8254)
-    location = (3, scene.size_y / 2, 1)
-    orientation = (scene.PI / 2, 0, scene.PI / 2)
+    # zrobimy tablice ze stalymi polozeniami kamery
+    # najmniejsza dlugosc sciany to 3m czyli dla wszystkich pokoi mozna zrobic
+    # podstawowe zdjecia na 3m, czyli dla tych najmniejszych pokoi bedzie
+    # mniej zdjec a dla najwiekszych najwiecej
+    # chyba dosc logicznie
+    # startowe:
+    # location = (3, scene.size_y / 2, 1)
+    # orientation = (scene.PI / 2, 0, scene.PI / 2)
+
+    location_smallest = [(3, scene.size_y / 2, 1), (3, scene.size_y / 2, 3), (3, scene.size_y / 2, 3),
+                         (3, scene.size_y / 2, 3)]
+    orientation_smallest = [(scene.PI / 2, 0, scene.PI / 2), (scene.PI / 4, 0, scene.PI / 2), (scene.PI / 6, 0, scene.PI / 2),
+                            (scene.PI / 4, 0, scene.PI / 2)]
+
+    location = (3, scene.size_y / 2, 3)
+    orientation = (scene.PI / 4, 0, scene.PI / 2) # ostatniego nie zmieniac chyba ze chcesz zeby obraz byl krzywo
     bpy.ops.object.camera_add(location=list(location), rotation=list(orientation))
     bpy.context.selected_objects[0].name = "Camera"
 
@@ -327,6 +351,8 @@ def save_image_render(scene):
     cv2.imwrite("sprawdzmy_pokoje2.png", dmap_w)
 
 
+def auto_render():
+    pass
 
 if __name__ == '__main__':
     changeGPU()
