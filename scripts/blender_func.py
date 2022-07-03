@@ -119,6 +119,10 @@ class RoomScene(Scene):
         self.window_margin_top: float = 1
         self.window_margin_bottom: float = 1
 
+        self.win_right = random.randrange(0, 2)
+        self.win_front = random.randrange(0, 2)
+        self.win_left = random.randrange(0, 2)
+
         self.camera_location = (3, self.size_y / 2, 1)
         self.camera_rotation = (self.PI / 2, 0, self.PI / 2)
         self.camera = Camera(location=self.camera_location, rotation=self.camera_rotation)
@@ -192,16 +196,33 @@ class RoomScene(Scene):
                                   material=window_material),
                            )
 
-        wall_right = Wall(thickness=self.wall_thickness, height=self.height, windows=windows_sides, x0=0, y0=self.size_y,
-                          x1=self.size_x, y1=self.size_y)
+        if self.win_right == 1:
+            wall_right = Wall(thickness=self.wall_thickness, height=self.height, windows=windows_sides, x0=0,
+                              y0=self.size_y,
+                              x1=self.size_x, y1=self.size_y)
+        else:
+            wall_right = Wall(thickness=self.wall_thickness, height=self.height, windows=[], x0=0,
+                              y0=self.size_y,
+                              x1=self.size_x, y1=self.size_y)
+
         wall_right.material = wall_material
 
-        wall_front = Wall(thickness=self.wall_thickness, height=self.height, windows=windows, x0=0, y0=0,
-                          x1=0, y1=self.size_y)
+        if self.win_front == 1:
+            wall_front = Wall(thickness=self.wall_thickness, height=self.height, windows=windows, x0=0, y0=0,
+                              x1=0, y1=self.size_y)
+        else:
+            wall_front = Wall(thickness=self.wall_thickness, height=self.height, windows=[], x0=0, y0=0,
+                              x1=0, y1=self.size_y)
+
         wall_front.material = wall_material
 
-        wall_left = Wall(thickness=self.wall_thickness, height=self.height, windows=windows_sides, x0=0, y0=0,
-                         x1=self.size_x, y1=0)
+        if self.win_right == 1:
+            wall_left = Wall(thickness=self.wall_thickness, height=self.height, windows=windows_sides, x0=0, y0=0,
+                             x1=self.size_x, y1=0)
+        else:
+            wall_left = Wall(thickness=self.wall_thickness, height=self.height, windows=[], x0=0, y0=0,
+                             x1=self.size_x, y1=0)
+
         wall_left.material = wall_material
 
         wall_back = Wall(thickness=self.wall_thickness, height=self.height, windows=[], x0=self.size_x, y0=0,

@@ -14,6 +14,8 @@ from scripts.blender_func import RoomScene
 from scripts.renderer import Renderer
 from scripts.modeler import Modeler
 
+last_f = np.array([0, 0])
+vertical_fur = False
 
 def changeGPU():
     bpy.data.scenes[0].render.engine = "CYCLES"
@@ -66,7 +68,7 @@ def create_walls():
     return scene
 
 
-def place_model(model, scene, l_furniture, scale=1.0):
+def place_model(model, scene, scale=1.0):
     dir = '../mgr_przydatne/' + model
     filename = random.choice(os.listdir(dir))
     path = os.path.join(dir, filename, 'model.obj')
@@ -87,22 +89,50 @@ def place_model(model, scene, l_furniture, scale=1.0):
     # print(obj_object.dimensions[1])
     if(model == 'chandeliers'):
         move_chandeliers(obj_object, scene)
-        return np.array([0, 0])
+        # return np.array([0, 0])
     else:
-        move_object(obj_object, scene, l_fur=l_furniture, scale=scale)
-        return np.array([obj_object.dimensions[0]*scale, obj_object.dimensions[2]*scale])
+        move_object(obj_object, scene, scale=scale)
+        # return np.array([obj_object.dimensions[0]*scale, obj_object.dimensions[2]*scale])
 
 
-def move_object(obj_object, scene, l_fur, scale):
+def move_object(obj_object, scene, scale):
     # (x,y,z) x to czerowna, y do gory, z to zielona
     # czerwona na plus, zielona na minus i wtedy jest w pokoju
     # vec = mathutils.Vector(((obj_object.dimensions[0] / 2 * obj_place[0]) * scale + l_fur[0] + scene.size_x * place[0] + scene.wall_thickness,
     #                         (obj_object.dimensions[1] / 2) * scale + 0.02,
     #                         -((obj_object.dimensions[2] / 2 * obj_place[1]) * scale + scene.size_y * place[1] + scene.wall_thickness)))
 
-    vec = mathutils.Vector(((obj_object.dimensions[0] / 2) * scale + scene.wall_thickness,
-                            (obj_object.dimensions[1] / 2) * scale + 0.02,
-                            -((obj_object.dimensions[2] / 2) * scale + l_fur[1])))
+    #zrobic klase zeby nie uzywac tego globalnie
+    global last_f
+    global vertical_fur
+
+    rand_x = random.uniform(0, 2)
+    rand_y = random.uniform(0, 2)
+
+    print("ostatni:")
+    print(last_f)
+    print("orientacja: ")
+    print(obj_object.rotation_euler)
+    if scene.size_y >= (last_f[1] + obj_object.dimensions[2]*scale + scene.wall_thickness*2):
+        print("mniejsze")
+        print(last_f)
+        vec = mathutils.Vector(((obj_object.dimensions[0] / 2) * scale + scene.wall_thickness + rand_y,
+                                (obj_object.dimensions[1] / 2) * scale + 0.02,
+                                -((obj_object.dimensions[2] / 2) * scale + last_f[1])))
+        last_f[1] += obj_object.dimensions[2] * scale
+    else:
+        last_f[1] -= obj_object.dimensions[2] * scale
+        vertical_fur = True
+    print("ostatni po dodaniu:")
+    print(last_f)
+
+    if vertical_fur is True:
+        obj_object.rotation_euler[2] = -scene.PI / 2
+        print("wieksze")
+        vec = mathutils.Vector(((obj_object.dimensions[0] / 2) * scale + scene.wall_thickness + last_f[0],
+                                (obj_object.dimensions[1] / 2) * scale + 0.02,
+                                -((obj_object.dimensions[2] / 2) * scale + scene.wall_thickness + last_f[1] + rand_x)))
+        last_f[0] += obj_object.dimensions[2] * scale
 
     inv = obj_object.matrix_world.copy()
     inv.invert()
@@ -110,6 +140,7 @@ def move_object(obj_object, scene, l_fur, scale):
     # in previous versions: vec_rot = vec * inv
     vec_rot = vec @ inv
     obj_object.location = obj_object.location + vec_rot
+
 
 def move_chandeliers(obj_object, scene):
     # (x,y,z) x to czerowna, y do gory, z to zielona
@@ -137,16 +168,16 @@ def number_of_furniture(scene):
 
     if area >= 1 and area <= 15:
         print('small')
-        return 4
+        return 10
     elif area > 15 and area <= 45:
         print('medium')
-        return 5
+        return 20
     elif area > 45 and area <= 80:
         print('large')
-        return 9
+        return 30
     elif area > 80 and area <= 100:
         print('xl')
-        return 12
+        return 40
     else:
         print('somethng went wrong')
         return None
@@ -175,27 +206,35 @@ def delete_furniture(loop):
 
 
 def render_room(furniture_const, furniture, scene):
-    last_furniture = np.array([scene.wall_thickness, scene.wall_thickness])
+    # last_furniture = np.array([scene.wall_thickness, scene.wall_thickness])
+    global last_f
+    global vertical_fur
+    vertical_fur = False
+    last_f = np.array([scene.wall_thickness,scene.wall_thickness])
+    print("przed wywolaniem")
+    print(last_f)
 
     more_furniture = random_furniture(scene, furniture_const, furniture)
     print(more_furniture)
-    last_furniture += place_model('chandeliers', scene, last_furniture)
-    print("check dimensions:")
-    print(last_furniture)
-    last_furniture += place_model(furniture_const[0], scene, last_furniture, scale=2)
-    print("check dimensions:")
-    print(last_furniture)
-    last_furniture += place_model(furniture_const[1], scene, last_furniture)
-    print("check dimensions:")
-    print(last_furniture)
-    last_furniture += place_model(furniture_const[2], scene, last_furniture)
-    print("check dimensions:")
-    print(last_furniture)
+    place_model('chandeliers', scene)
+    # print("check dimensions:")
+    # print(last_furniture)
+    place_model(furniture_const[0], scene, scale=2)
+    # print("check dimensions:")
+    # print(last_furniture)
+    place_model(furniture_const[1], scene)
+    # print("check dimensions:")
+    # print(last_furniture)
+    place_model(furniture_const[2], scene)
+    # print("check dimensions:")
+    # print(last_furniture)
 
     for i in range(len(more_furniture)):
-        last_furniture += place_model(furniture[more_furniture[i]], scene, last_furniture)
-        print("check dimensions:")
-        print(last_furniture)
+        print("numer:")
+        print(i)
+        place_model(furniture[more_furniture[i]], scene)
+        # print("check dimensions:")
+        # print(last_furniture)
 
     loop = len(furniture_const) + len(more_furniture)
 
@@ -234,6 +273,7 @@ def render_scenes():
                 scene)
     # save_image_render(scene)
     change_camera_place(scene, 2)
+
 
 def change_camera_place(scene, number):
     #na 8m chyba najdalej siega kinect
