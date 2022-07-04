@@ -200,7 +200,11 @@ def delete_furniture(loop):
     bpy.data.objects['model'].select_set(True)  # Blender 2.8x
 
     for i in range(loop):
-        bpy.data.objects['model.00' + str(i + 1)].select_set(True)
+        if i < 9:
+            bpy.data.objects['model.00' + str(i + 1)].select_set(True)
+        else:
+            bpy.data.objects['model.0' + str(i + 1)].select_set(True)
+
 
     bpy.ops.object.delete()
 
@@ -251,7 +255,9 @@ def render_bedroom(scene, i, j):
     loop = render_room(furniture_const, furniture,
                 scene)
 
-    auto_save(scene, i, j, loop)
+    name = "bedroom"
+
+    auto_save(scene, i, j, loop, name)
 
 
 def render_bathroom(scene, i, j):
@@ -263,7 +269,9 @@ def render_bathroom(scene, i, j):
     loop = render_room(furniture_const, furniture,
                 scene)
 
-    auto_save(scene, i, j, loop)
+    name = "bathroom"
+
+    auto_save(scene, i, j, loop, name)
 
 
 def render_kitchen(scene, i, j):
@@ -275,7 +283,9 @@ def render_kitchen(scene, i, j):
     loop = render_room(furniture_const, furniture,
                 scene)
 
-    auto_save(scene, i, j, loop)
+    name = "kitchen"
+
+    auto_save(scene, i, j, loop, name)
 
 
 def render_livingRoom(scene, i, j):
@@ -286,18 +296,20 @@ def render_livingRoom(scene, i, j):
                  'bookshelfs', 'speakers']
     loop = render_room(furniture_const, furniture,
                 scene)
+    name = "living_room"
 
-    auto_save(scene, i, j, loop)
+    auto_save(scene, i, j, loop, name)
 
 
-def auto_save(scene, i, j, loop):
+def auto_save(scene, i, j, loop, name):
 
     for empty in range(2):
         for k in range(3):
             for l in range(4):
                 for n in range(6):
-                    change_camera_place(scene, [k, l, n], i, j, empty)
-        delete_furniture(loop)
+                    change_camera_place(scene, [k, l, n], i, j, empty, name)
+        if empty == 0:
+            delete_furniture(loop)
 
 
 def render_scenes():
@@ -313,7 +325,7 @@ def render_scenes():
     auto_save(scene, 0, 0, 11)
 
 
-def change_camera_place(scene, number, i, j, empty):
+def change_camera_place(scene, number, i, j, empty, name):
     #na 8m chyba najdalej siega kinect
     #losuje wartosc 0 lub 1 zeby zdecydowac na ktora sciane patrzy
     # x_or_y = random.randrange(0, 2)
@@ -347,20 +359,22 @@ def change_camera_place(scene, number, i, j, empty):
     #
     # location_smallest = [(3, scene.size_y / 2, 1), (3, scene.size_y / 2, 3), (3, scene.size_y / 2, 3),
     #                      (3, scene.size_y / 2, 3)]
-    # orientation_smallest = [(scene.PI / 2, 0, scene.PI / 2), (scene.PI / 4, 0, scene.PI / 2), (scene.PI / 6, 0, scene.PI / 2),
+    # orientation_smallest =
+    # [(scene.PI / 2, 0, scene.PI / 2), (scene.PI / 4, 0, scene.PI / 2), (scene.PI / 6, 0, scene.PI / 2),
     #                         (scene.PI / 4, 0, scene.PI / 2)]
 
     # location = (3, scene.size_y / 2, 3)
     # orientation = (scene.PI / 2, 0, scene.PI / 6) # ostatniego nie zmieniac chyba ze chcesz zeby obraz byl krzywo
 
     location = l_values[number[0]][number[1]]
-    orientation = (k_values[number[0]][0] + m_values[number[2]], k_values[number[0]][1],  k_values[number[0]][2] + n_values[number[2]])
+    orientation = (k_values[number[0]][0] + m_values[number[2]], k_values[number[0]][1],  k_values[number[0]][2] +
+                   n_values[number[2]])
 
     # -scene.PI / 2 w orientacji w z to patrzy na sciane z drzwiami
     bpy.ops.object.camera_add(location=list(location), rotation=list(orientation))
     bpy.context.selected_objects[0].name = "Camera"
 
-    save_image_render(scene, i, j, number, empty)
+    save_image_render(scene, i, j, number, empty, name)
 
 
 def check_walla(scene):
@@ -478,7 +492,7 @@ def get_depth():
     return dmap
 
 
-def save_image_render(scene, i, j, number, empty):
+def save_image_render(scene, i, j, number, empty, name):
     # bpy.ops.export_scene.obj(filepath="/home/justyna/All/magisterka/pusty.obj")
 
     # change_camera_place(scene, 2)
@@ -524,12 +538,12 @@ def save_image_render(scene, i, j, number, empty):
 
     if empty == 0:
         bpy.context.scene.render.filepath = "/home/justyna/All/magisterka/images_models/images/with_furniture/rgb/rgb_" \
-                                            + str(i) + "_" + str(j) + "_" + str(number[0]) + "_" + str(number[1]) + \
-                                            "_" + str(number[2]) + "_" + str(number[3]) + ".png"
+                                            + name + "_" + str(i) + "_" + str(j) + "_" + str(number[0]) + "_" + str(number[1]) + \
+                                            "_" + str(number[2]) + ".png"
     else:
         bpy.context.scene.render.filepath = "/home/justyna/All/magisterka/images_models/images/empty/rgb/rgb_" \
-                                            + str(i) + "_" + str(j) + "_" + str(number[0]) + "_" + str(number[1]) + \
-                                            "_" + str(number[2]) + "_" + str(number[3]) + ".png"
+                                            + name + "_" + str(i) + "_" + str(j) + "_" + str(number[0]) + "_" + str(number[1]) + \
+                                            "_" + str(number[2]) + ".png"
 
     bpy.ops.render.render(False, animation=False, write_still=True)
 
@@ -550,14 +564,16 @@ def save_image_render(scene, i, j, number, empty):
 
     if empty == 0:
         cv2.imwrite(
-            "/home/justyna/All/magisterka/images_models/images/with_furniture/depth/depth_" + str(i) + "_" + str(j)
+            "/home/justyna/All/magisterka/images_models/images/with_furniture/depth/depth_" + name + "_" +
+            str(i) + "_" + str(j)
             + "_" + str(number[0]) + "_" + str(number[1]) + "_" + str(number[2])
-            + "_" + str(number[3]) + ".png", dmap_w)
+            + ".png", dmap_w)
     else:
         cv2.imwrite(
-            "/home/justyna/All/magisterka/images_models/images/empty/depth/depth_" + str(i) + "_" + str(j)
+            "/home/justyna/All/magisterka/images_models/images/empty/depth/depth_" + name + "_" +
+            str(i) + "_" + str(j)
             + "_" + str(number[0]) + "_" + str(number[1]) + "_" + str(number[2])
-            + "_" + str(number[3]) + ".png", dmap_w)
+            + ".png", dmap_w)
 
 
 
