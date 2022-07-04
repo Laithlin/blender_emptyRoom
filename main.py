@@ -79,8 +79,8 @@ def place_model(model, scene, scale=1.0):
     # sie nie jako pokedynczy obiekt i jest problem z przesuwaniem
     imported_object = bpy.ops.import_scene.obj(filepath=file_loc, use_split_objects=False)
     obj_object = bpy.context.selected_objects[0]
-    print("dimensions:")
-    print(obj_object.dimensions)
+    # print("dimensions:")
+    # print(obj_object.dimensions)
 
     obj_object.scale[0] *= scale
     obj_object.scale[1] *= scale
@@ -109,13 +109,13 @@ def move_object(obj_object, scene, scale):
     rand_x = random.uniform(0, 2)
     rand_y = random.uniform(0, 2)
 
-    print("ostatni:")
-    print(last_f)
-    print("orientacja: ")
-    print(obj_object.rotation_euler)
+    # print("ostatni:")
+    # print(last_f)
+    # print("orientacja: ")
+    # print(obj_object.rotation_euler)
     if scene.size_y >= (last_f[1] + obj_object.dimensions[2]*scale + scene.wall_thickness*2):
-        print("mniejsze")
-        print(last_f)
+        # print("mniejsze")
+        # print(last_f)
         vec = mathutils.Vector(((obj_object.dimensions[0] / 2) * scale + scene.wall_thickness + rand_y,
                                 (obj_object.dimensions[1] / 2) * scale + 0.02,
                                 -((obj_object.dimensions[2] / 2) * scale + last_f[1])))
@@ -123,12 +123,12 @@ def move_object(obj_object, scene, scale):
     else:
         last_f[1] -= obj_object.dimensions[2] * scale
         vertical_fur = True
-    print("ostatni po dodaniu:")
-    print(last_f)
+    # print("ostatni po dodaniu:")
+    # print(last_f)
 
     if vertical_fur is True:
         obj_object.rotation_euler[2] = -scene.PI / 2
-        print("wieksze")
+        # print("wieksze")
         vec = mathutils.Vector(((obj_object.dimensions[0] / 2) * scale + scene.wall_thickness + last_f[0],
                                 (obj_object.dimensions[1] / 2) * scale + 0.02,
                                 -((obj_object.dimensions[2] / 2) * scale + scene.wall_thickness + last_f[1] + rand_x)))
@@ -167,16 +167,16 @@ def number_of_furniture(scene):
     print("area " + str(area))
 
     if area >= 1 and area <= 15:
-        print('small')
+        # print('small')
         return 10
     elif area > 15 and area <= 45:
-        print('medium')
+        # print('medium')
         return 20
     elif area > 45 and area <= 80:
-        print('large')
+        # print('large')
         return 30
     elif area > 80 and area <= 100:
-        print('xl')
+        # print('xl')
         return 40
     else:
         print('somethng went wrong')
@@ -185,7 +185,7 @@ def number_of_furniture(scene):
 
 def random_furniture(scene, furniture_const, furniture):
     furniture_number = number_of_furniture(scene)
-    print("furmiture number " + str(furniture_number))
+    # print("furmiture number " + str(furniture_number))
     furniture_add = furniture_number - len(furniture_const)
     fur_add = []
 
@@ -211,11 +211,11 @@ def render_room(furniture_const, furniture, scene):
     global vertical_fur
     vertical_fur = False
     last_f = np.array([scene.wall_thickness,scene.wall_thickness])
-    print("przed wywolaniem")
-    print(last_f)
+    # print("przed wywolaniem")
+    # print(last_f)
 
     more_furniture = random_furniture(scene, furniture_const, furniture)
-    print(more_furniture)
+    # print(more_furniture)
     place_model('chandeliers', scene)
     # print("check dimensions:")
     # print(last_furniture)
@@ -230,38 +230,74 @@ def render_room(furniture_const, furniture, scene):
     # print(last_furniture)
 
     for i in range(len(more_furniture)):
-        print("numer:")
-        print(i)
+        # print("numer:")
+        # print(i)
         place_model(furniture[more_furniture[i]], scene)
         # print("check dimensions:")
         # print(last_furniture)
 
     loop = len(furniture_const) + len(more_furniture)
 
-# def render_bedroom(scene):
-#     furniture_const = ['beds', 'dressers', 'armchairs']
-#     furniture = ['armchairs', 'desks', 'beds', 'couches',
-#                  'pianos', 'dressers', 'standing_lamps',
-#                  'bookshelfs', 'speakers']
+    return loop
 
 
-# def render_bathroom(scene):
-#     furniture_const = ['bathtubs', 'washers', 'standing_lamps']
-#     furniture = ['bathtubs', 'washers', 'standing_lamps', 'armchairs', 'bins',
-#                  'cabinets']
+def render_bedroom(scene, i, j):
+    bpy.ops.export_scene.obj(
+        filepath="/home/justyna/All/magisterka/images_models/models/bedroom_" + str(i) + "_" + str(j) + ".obj")
+    furniture_const = ['beds', 'dressers', 'armchairs']
+    furniture = ['armchairs', 'desks', 'beds', 'couches',
+                 'pianos', 'dressers', 'standing_lamps',
+                 'bookshelfs', 'speakers']
+    loop = render_room(furniture_const, furniture,
+                scene)
+
+    auto_save(scene, i, j, loop)
 
 
-# def render_kitchen(scene):
-#     furniture_const = ['dishwashers', 'desks', 'stoves']
-#     furniture = ['armchairs', 'desks', 'dishwashers', 'bins',
-#                  'standing_lamps', 'cabinets', 'bookshelfs', 'stoves']
+def render_bathroom(scene, i, j):
+    bpy.ops.export_scene.obj(
+        filepath="/home/justyna/All/magisterka/images_models/models/bethroom_" + str(i) + "_" + str(j) + ".obj")
+    furniture_const = ['bathtubs', 'washers', 'standing_lamps']
+    furniture = ['bathtubs', 'washers', 'standing_lamps', 'armchairs', 'bins',
+                 'cabinets']
+    loop = render_room(furniture_const, furniture,
+                scene)
+
+    auto_save(scene, i, j, loop)
 
 
-# def render_livingRoom(scene):
-#     furniture_const = ['couches', 'desks', 'armchairs']
-#     furniture = ['armchairs', 'desks', '', 'couches',
-#                  'pianos', 'dressers', 'standing_lamps',
-#                  'bookshelfs', 'speakers']
+def render_kitchen(scene, i, j):
+    bpy.ops.export_scene.obj(
+        filepath="/home/justyna/All/magisterka/images_models/models/kitchen_" + str(i) + "_" + str(j) + ".obj")
+    furniture_const = ['dishwashers', 'desks', 'stoves']
+    furniture = ['armchairs', 'desks', 'dishwashers', 'bins',
+                 'standing_lamps', 'cabinets', 'bookshelfs', 'stoves']
+    loop = render_room(furniture_const, furniture,
+                scene)
+
+    auto_save(scene, i, j, loop)
+
+
+def render_livingRoom(scene, i, j):
+    bpy.ops.export_scene.obj(filepath="/home/justyna/All/magisterka/images_models/models/living_room_" + str(i) + "_" + str(j) + ".obj")
+    furniture_const = ['couches', 'desks', 'armchairs']
+    furniture = ['armchairs', 'desks', '', 'couches',
+                 'pianos', 'dressers', 'standing_lamps',
+                 'bookshelfs', 'speakers']
+    loop = render_room(furniture_const, furniture,
+                scene)
+
+    auto_save(scene, i, j, loop)
+
+
+def auto_save(scene, i, j, loop):
+
+    for empty in range(2):
+        for k in range(3):
+            for l in range(4):
+                for n in range(6):
+                    change_camera_place(scene, [k, l, n], i, j, empty)
+        delete_furniture(loop)
 
 
 def render_scenes():
@@ -272,19 +308,28 @@ def render_scenes():
                  'bookshelfs', 'speakers'],
                 scene)
     # save_image_render(scene)
-    change_camera_place(scene, 2)
+    # change_camera_place(scene, 2)
+
+    auto_save(scene, 0, 0, 11)
 
 
-def change_camera_place(scene, number):
+def change_camera_place(scene, number, i, j, empty):
     #na 8m chyba najdalej siega kinect
     #losuje wartosc 0 lub 1 zeby zdecydowac na ktora sciane patrzy
-    x_or_y = random.randrange(0, 2)
+    # x_or_y = random.randrange(0, 2)
     # print(x_or_y)
 
     #jak 0 to patrzy na y
     # if x_or_y == 0:
     #     # scene.camera_location = (scene.size_x, scene.size_y / 2, 1)
     #     scene.camera_rotation = (scene.PI / 2, 0, scene.PI / 2) #scene.PI / 2
+    l_val = check_walla(scene)
+
+    k_values = [[scene.PI / 2, 0, 0], [scene.PI / 2, 0, scene.PI / 2], [scene.PI / 2, 0, scene.PI]]
+    l_values = [l_val[0], l_val[1], l_val[1]]
+    m_values = [0, -scene.PI/4, -2*scene.PI / 6, -scene.PI / 6, 0, 0]
+    n_values = [0, scene.PI / 6, -scene.PI / 6, -scene.PI/4, scene.PI/4, 2*scene.PI/3]
+
     bpy.ops.object.select_all(action='DESELECT')
     scene.camera_rotation = (0, 0, 0)
     bpy.data.objects['Camera'].select_set(True)
@@ -299,17 +344,124 @@ def change_camera_place(scene, number):
     # startowe:
     # location = (3, scene.size_y / 2, 1)
     # orientation = (scene.PI / 2, 0, scene.PI / 2)
+    #
+    # location_smallest = [(3, scene.size_y / 2, 1), (3, scene.size_y / 2, 3), (3, scene.size_y / 2, 3),
+    #                      (3, scene.size_y / 2, 3)]
+    # orientation_smallest = [(scene.PI / 2, 0, scene.PI / 2), (scene.PI / 4, 0, scene.PI / 2), (scene.PI / 6, 0, scene.PI / 2),
+    #                         (scene.PI / 4, 0, scene.PI / 2)]
 
-    location_smallest = [(3, scene.size_y / 2, 1), (3, scene.size_y / 2, 3), (3, scene.size_y / 2, 3),
-                         (3, scene.size_y / 2, 3)]
-    orientation_smallest = [(scene.PI / 2, 0, scene.PI / 2), (scene.PI / 4, 0, scene.PI / 2), (scene.PI / 6, 0, scene.PI / 2),
-                            (scene.PI / 4, 0, scene.PI / 2)]
+    # location = (3, scene.size_y / 2, 3)
+    # orientation = (scene.PI / 2, 0, scene.PI / 6) # ostatniego nie zmieniac chyba ze chcesz zeby obraz byl krzywo
 
-    location = (3, scene.size_y / 2, 3)
-    orientation = (scene.PI / 4, 0, scene.PI / 2) # ostatniego nie zmieniac chyba ze chcesz zeby obraz byl krzywo
+    location = l_values[number[0]][number[1]]
+    orientation = (k_values[number[0]][0] + m_values[number[2]], k_values[number[0]][1],  k_values[number[0]][2] + n_values[number[2]])
+
+    # -scene.PI / 2 w orientacji w z to patrzy na sciane z drzwiami
     bpy.ops.object.camera_add(location=list(location), rotation=list(orientation))
     bpy.context.selected_objects[0].name = "Camera"
 
+    save_image_render(scene, i, j, number, empty)
+
+
+def check_walla(scene):
+    l_walls_front = []
+    l_walls_right_left = []
+
+    if scene.size_y <= 4:
+        l_walls_front = [(2, scene.size_y/6, 1.5), (3, scene.size_y/6, 1.5), (2, 2*scene.size_y/6, 1.5), (3, 2*scene.size_y/6, 1.5),
+                         (2, scene.size_y/2, 1.5), (3, scene.size_y/2, 1.5), (2, 4*scene.size_y/6, 1.5), (3, 4*scene.size_y/6, 1.5),
+                         (2, 5*scene.size_y/6, 1.5), (3, 5*scene.size_y/6, 1.5),
+                         (2, scene.size_y / 6, 2.5), (3, scene.size_y / 6, 2.5), (2, 2 * scene.size_y / 6, 2.5),
+                         (3, 2 * scene.size_y / 6, 2.5),
+                         (2, scene.size_y / 2, 2.5), (3, scene.size_y / 2, 2.5), (2, 4 * scene.size_y / 6, 2.5),
+                         (3, 4 * scene.size_y / 6, 2.5),
+                         (2, 5 * scene.size_y / 6, 2.5), (3, 5 * scene.size_y / 6, 2.5)]
+
+    elif scene.size_y <= 6:
+        l_walls_front = [(2, scene.size_y / 6, 1.5), (4, scene.size_y / 6, 1.5), (2, 2 * scene.size_y / 6, 1.5),
+                         (4, 2 * scene.size_y / 6, 1.5),
+                         (2, scene.size_y / 2, 1.5), (4, scene.size_y / 2, 1.5), (2, 4 * scene.size_y / 6, 1.5),
+                         (4, 4 * scene.size_y / 6, 1.5),
+                         (2, 5 * scene.size_y / 6, 1.5), (4, 5 * scene.size_y / 6, 1.5),
+                         (4, scene.size_y / 6, 2.5), (3, scene.size_y / 6, 2.5), (2, 2 * scene.size_y / 6, 2.5),
+                         (3, 2 * scene.size_y / 6, 2.5),
+                         (4, scene.size_y / 2, 2.5), (3, scene.size_y / 2, 2.5), (2, 4 * scene.size_y / 6, 2.5),
+                         (3, 4 * scene.size_y / 6, 2.5),
+                         (2, 5 * scene.size_y / 6, 2.5), (4, 5 * scene.size_y / 6, 2.5)]
+
+    elif scene.size_y < 8:
+        l_walls_front = [(2, scene.size_y / 6, 1.5), (4, scene.size_y / 6, 1.5), (6, 2 * scene.size_y / 6, 1.5),
+                         (4, 2 * scene.size_y / 6, 1.5),
+                         (5, scene.size_y / 2, 1.5), (4, scene.size_y / 2, 1.5), (6, 4 * scene.size_y / 6, 1.5),
+                         (4, 4 * scene.size_y / 6, 1.5),
+                         (2, 5 * scene.size_y / 6, 1.5), (4, 5 * scene.size_y / 6, 1.5),
+                         (4, scene.size_y / 6, 2.5), (5, scene.size_y / 6, 2.5), (2, 2 * scene.size_y / 6, 2.5),
+                         (6, 2 * scene.size_y / 6, 2.5),
+                         (4, scene.size_y / 2, 2.5), (6, scene.size_y / 2, 2.5), (6, 4 * scene.size_y / 6, 2.5),
+                         (5, 4 * scene.size_y / 6, 2.5),
+                         (2, 5 * scene.size_y / 6, 2.5), (5, 5 * scene.size_y / 6, 2.5)]
+
+    else:
+        l_walls_front = [(2, scene.size_y / 6, 1.5), (4, scene.size_y / 6, 1.5), (7, 2 * scene.size_y / 6, 1.5),
+                         (4, 2 * scene.size_y / 6, 1.5),
+                         (2, scene.size_y / 2, 1.5), (4, scene.size_y / 2, 1.5), (6, 4 * scene.size_y / 6, 1.5),
+                         (4, 4 * scene.size_y / 6, 1.5),
+                         (6, 5 * scene.size_y / 6, 1.5), (4, 5 * scene.size_y / 6, 1.5),
+                         (4, scene.size_y / 6, 2.5), (3, scene.size_y / 6, 2.5), (7, 2 * scene.size_y / 6, 2.5),
+                         (5, 2 * scene.size_y / 6, 2.5),
+                         (6, scene.size_y / 2, 2.5), (3, scene.size_y / 2, 2.5), (2, 4 * scene.size_y / 6, 2.5),
+                         (3, 4 * scene.size_y / 6, 2.5),
+                         (6, 5 * scene.size_y / 6, 2.5), (4, 5 * scene.size_y / 6, 2.5)]
+
+    if scene.size_x <= 4:
+        l_walls_right_left = [(scene.size_y / 6, 2, 1.5), (scene.size_y / 6, 3, 1.5), (2 * scene.size_y / 6, 2, 1.5),
+                         (2 * scene.size_y / 6, 3, 1.5),
+                         (scene.size_y / 2, 2, 1.5), (scene.size_y / 2, 3, 1.5), (4 * scene.size_y / 6, 2, 1.5),
+                         (4 * scene.size_y / 6, 3, 1.5),
+                         (5 * scene.size_y / 6, 2, 1.5), (5 * scene.size_y / 6, 3, 1.5),
+                         (scene.size_y / 6, 2, 2.5), (scene.size_y / 6, 3, 2.5), (2 * scene.size_y / 6, 2, 2.5),
+                         (2 * scene.size_y / 6, 3, 2.5),
+                         (scene.size_y / 2, 2, 2.5), (scene.size_y / 2, 3, 2.5), (4 * scene.size_y / 6, 2, 2.5),
+                         (4 * scene.size_y / 6, 3, 2.5),
+                         (5 * scene.size_y / 6, 2, 2.5), (5 * scene.size_y / 6, 3, 2.5)]
+
+    elif scene.size_x <= 6:
+        l_walls_right_left = [(scene.size_y / 6, 2, 1.5), (scene.size_y / 6, 4, 1.5), (2 * scene.size_y / 6, 2, 1.5),
+                         (2 * scene.size_y / 6, 4, 1.5),
+                         (scene.size_y / 2, 2, 1.5), (scene.size_y / 2, 4, 1.5), (4 * scene.size_y / 6, 2, 1.5),
+                         (4 * scene.size_y / 6, 4, 1.5),
+                         (5 * scene.size_y / 6, 2, 1.5), (5 * scene.size_y / 6, 4, 1.5),
+                         (scene.size_y / 6, 4, 2.5), (scene.size_y / 6, 3, 2.5), (2 * scene.size_y / 6, 2, 2.5),
+                         (2 * scene.size_y / 6, 3, 2.5),
+                         (scene.size_y / 2, 4, 2.5), (scene.size_y / 2, 3, 2.5), (4 * scene.size_y / 6, 2, 2.5),
+                         (4 * scene.size_y / 6, 3, 2.5),
+                         (5 * scene.size_y / 6, 2, 2.5), (5 * scene.size_y / 6, 4, 2.5)]
+
+    elif scene.size_x < 8:
+        l_walls_right_left = [(scene.size_y / 6, 2, 1.5), (scene.size_y / 6, 4, 1.5), (2 * scene.size_y / 6, 6, 1.5),
+                         (2 * scene.size_y / 6, 4, 1.5),
+                         (scene.size_y / 2, 5, 1.5), (scene.size_y / 2, 4, 1.5), (4 * scene.size_y / 6, 6, 1.5),
+                         (4 * scene.size_y / 6, 4, 1.5),
+                         (5 * scene.size_y / 6, 2, 1.5), (5 * scene.size_y / 6, 4, 1.5),
+                         (scene.size_y / 6, 4, 2.5), (scene.size_y / 6, 5, 2.5), (2 * scene.size_y / 6, 2, 2.5),
+                         (2 * scene.size_y / 6, 6, 2.5),
+                         (scene.size_y / 2, 4, 2.5), (scene.size_y / 2, 6, 2.5), (4 * scene.size_y / 6, 6, 2.5),
+                         (4 * scene.size_y / 6, 5, 2.5),
+                         (5 * scene.size_y / 6, 2, 2.5), (5 * scene.size_y / 6, 5, 2.5)]
+
+    else:
+        l_walls_right_left = [(scene.size_y / 6, 2, 1.5), (scene.size_y / 6, 4, 1.5), (2 * scene.size_y / 6, 7, 1.5),
+                         (2 * scene.size_y / 6, 4, 1.5),
+                         (scene.size_y / 2, 2, 1.5), (scene.size_y / 2, 4, 1.5), (4 * scene.size_y / 6, 6, 1.5),
+                         (4 * scene.size_y / 6, 4, 1.5),
+                         (5 * scene.size_y / 6, 6, 1.5), (5 * scene.size_y / 6, 4, 1.5),
+                         (scene.size_y / 6, 4, 2.5), (scene.size_y / 6, 3, 2.5), (2 * scene.size_y / 6, 7, 2.5),
+                         (2 * scene.size_y / 6, 5, 2.5),
+                         (scene.size_y / 2, 6, 2.5), (scene.size_y / 2, 3, 2.5), (4 * scene.size_y / 6, 2, 2.5),
+                         (4 * scene.size_y / 6, 3, 2.5),
+                         (5 * scene.size_y / 6, 6, 2.5), (5 * scene.size_y / 6, 4, 2.5)]
+
+    return [l_walls_front, l_walls_right_left]
 
 
 def get_depth():
@@ -326,8 +478,8 @@ def get_depth():
     return dmap
 
 
-def save_image_render(scene):
-    bpy.ops.export_scene.obj(filepath="/home/justyna/All/magisterka/pusty.obj")
+def save_image_render(scene, i, j, number, empty):
+    # bpy.ops.export_scene.obj(filepath="/home/justyna/All/magisterka/pusty.obj")
 
     # change_camera_place(scene, 2)
     bpy.context.scene.camera = bpy.data.objects['Camera']
@@ -370,33 +522,63 @@ def save_image_render(scene):
     # fileOutput.file_slots[0].path = 'depth_sprawdzmy.png'
     # links.new(norm.outputs[0], fileOutput.inputs[0])
 
-    bpy.context.scene.render.filepath = "/home/justyna/All/magisterka/rgb.png"
+    if empty == 0:
+        bpy.context.scene.render.filepath = "/home/justyna/All/magisterka/images_models/images/with_furniture/rgb/rgb_" \
+                                            + str(i) + "_" + str(j) + "_" + str(number[0]) + "_" + str(number[1]) + \
+                                            "_" + str(number[2]) + "_" + str(number[3]) + ".png"
+    else:
+        bpy.context.scene.render.filepath = "/home/justyna/All/magisterka/images_models/images/empty/rgb/rgb_" \
+                                            + str(i) + "_" + str(j) + "_" + str(number[0]) + "_" + str(number[1]) + \
+                                            "_" + str(number[2]) + "_" + str(number[3]) + ".png"
+
     bpy.ops.render.render(False, animation=False, write_still=True)
 
     dmap = get_depth()
-    print(dmap)
+    # print(dmap)
     for pixel in range(len(dmap)):
         # print("sprawdzmy")
         # print(len(dmap[pixel]))
         for pix in range(len(dmap[pixel])):
-            if dmap[pixel][pix] >= 7:
+            if dmap[pixel][pix] > 7:
                 dmap[pixel][pix] = 100000000
             else:
                 dmap[pixel][pix] = dmap[pixel][pix]*1000
-    print("koniec")
+    # print("koniec")
 
-    print(dmap)
+    # print(dmap)
     dmap_w = np.array(dmap, dtype=np.uint16)
 
-    cv2.imwrite("sprawdzmy_pokoje2.png", dmap_w)
+    if empty == 0:
+        cv2.imwrite(
+            "/home/justyna/All/magisterka/images_models/images/with_furniture/depth/depth_" + str(i) + "_" + str(j)
+            + "_" + str(number[0]) + "_" + str(number[1]) + "_" + str(number[2])
+            + "_" + str(number[3]) + ".png", dmap_w)
+    else:
+        cv2.imwrite(
+            "/home/justyna/All/magisterka/images_models/images/empty/depth/depth_" + str(i) + "_" + str(j)
+            + "_" + str(number[0]) + "_" + str(number[1]) + "_" + str(number[2])
+            + "_" + str(number[3]) + ".png", dmap_w)
+
 
 
 def auto_render():
-    pass
+    for i in range(100):
+        scene = create_walls()
+        for j in range(50):
+            render_bedroom(scene, i, j)
+            render_kitchen(scene, i, j)
+            render_bathroom(scene, i, j)
+            render_livingRoom(scene, i, j)
+        clean_scene()
+
 
 if __name__ == '__main__':
     changeGPU()
-    render_scenes()
+    # render_scenes()
+
+    auto_render()
+
+    # render_scenes()
 
     # bpy.ops.export_scene.obj(filepath="/home/justyna/All/magisterka/pusty.obj")
     #
