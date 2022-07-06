@@ -79,6 +79,7 @@ def place_model(model, scene, scale=1.0):
     # sie nie jako pokedynczy obiekt i jest problem z przesuwaniem
     imported_object = bpy.ops.import_scene.obj(filepath=file_loc, use_split_objects=False)
     obj_object = bpy.context.selected_objects[0]
+    bpy.context.selected_objects[0].name = "model"
     # print("dimensions:")
     # print(obj_object.dimensions)
 
@@ -197,16 +198,30 @@ def random_furniture(scene, furniture_const, furniture):
 
 def delete_furniture(loop):
     bpy.ops.object.select_all(action='DESELECT')
-    bpy.data.objects['model'].select_set(True)  # Blender 2.8x
+    # bpy.data.objects['model'].select_set(True)  # Blender 2.8x
+    # bpy.context.selected_objects[0].name = "delete_me"
+    # bpy.data.objects.remove(bpy.context.scene.objects['delete_me'], do_unlink=True)
+    bpy.data.objects.remove(bpy.data.objects['model'], do_unlink=True)
 
     for i in range(loop):
         if i < 9:
-            bpy.data.objects['model.00' + str(i + 1)].select_set(True)
+            # bpy.data.objects['model.00' + str(i + 1)].select_set(True)
+            # bpy.context.selected_objects[0].name = "delete_me"
+            # bpy.data.objects.remove(bpy.context.scene.objects['delete_me'], do_unlink=True)
+            bpy.data.objects.remove(bpy.data.objects['model.00' + str(i + 1)], do_unlink=True)
+        elif i < 99:
+            # bpy.data.objects['model.0' + str(i + 1)].select_set(True)
+            # bpy.context.selected_objects[0].name = "delete_me"
+            # bpy.data.objects.remove(bpy.context.scene.objects['delete_me'], do_unlink=True)
+            bpy.data.objects.remove(bpy.data.objects['model.0' + str(i + 1)], do_unlink=True)
         else:
-            bpy.data.objects['model.0' + str(i + 1)].select_set(True)
+            # bpy.data.objects['model.' + str(i + 1)].select_set(True)
+            # bpy.context.selected_objects[0].name = "delete_me"
+            # bpy.data.objects.remove(bpy.context.scene.objects['delete_me'], do_unlink=True)
+            bpy.data.objects.remove(bpy.data.objects['model.' + str(i + 1)], do_unlink=True)
 
-
-    bpy.ops.object.delete()
+    print("koniec usuwania")
+    # bpy.ops.object.delete()
 
 
 def render_room(furniture_const, furniture, scene):
@@ -291,7 +306,7 @@ def render_kitchen(scene, i, j):
 def render_livingRoom(scene, i, j):
     bpy.ops.export_scene.obj(filepath="/home/justyna/All/magisterka/images_models/models/living_room_" + str(i) + "_" + str(j) + ".obj")
     furniture_const = ['couches', 'desks', 'armchairs']
-    furniture = ['armchairs', 'desks', '', 'couches',
+    furniture = ['armchairs', 'desks', 'couches',
                  'pianos', 'dressers', 'standing_lamps',
                  'bookshelfs', 'speakers']
     loop = render_room(furniture_const, furniture,
@@ -319,10 +334,12 @@ def render_scenes():
                  'pianos', 'dressers', 'standing_lamps',
                  'bookshelfs', 'speakers'],
                 scene)
+    # bpy.data.objects.remove(bpy.context.scene.objects["model.001"], do_unlink=True)
+
     # save_image_render(scene)
     # change_camera_place(scene, 2)
 
-    auto_save(scene, 0, 0, 11)
+    # auto_save(scene, 0, 0, 11)
 
 
 def change_camera_place(scene, number, i, j, empty, name):
@@ -584,8 +601,32 @@ def auto_render():
             render_bedroom(scene, i, j)
             render_kitchen(scene, i, j)
             render_bathroom(scene, i, j)
-            render_livingRoom(scene, i, j)
+            # render_livingRoom(scene, i, j)
         clean_scene()
+
+
+def test_delete():
+    scene = create_walls()
+    render_room(['couches', 'desks', 'armchairs'],
+                ['armchairs', 'desks', 'couches',
+                 'pianos', 'dressers', 'standing_lamps',
+                 'bookshelfs', 'speakers'],
+                scene)
+
+    delete_furniture(11)
+    render_room(['couches', 'desks', 'armchairs'],
+                ['armchairs', 'desks', 'couches',
+                 'pianos', 'dressers', 'standing_lamps',
+                 'bookshelfs', 'speakers'],
+                scene)
+
+    delete_furniture(11)
+    # render_room(['couches', 'desks', 'armchairs'],
+    #             ['armchairs', 'desks', 'couches',
+    #              'pianos', 'dressers', 'standing_lamps',
+    #              'bookshelfs', 'speakers'],
+    #             scene)
+    # delete_furniture(11)
 
 
 if __name__ == '__main__':
@@ -593,6 +634,7 @@ if __name__ == '__main__':
     # render_scenes()
 
     auto_render()
+    # test_delete()
 
     # render_scenes()
 
