@@ -32,10 +32,11 @@ def changeGPU():
     bpy.context.preferences.addons["cycles"].preferences.get_devices()
     print(bpy.context.preferences.addons["cycles"].preferences.compute_device_type)
     for d in bpy.context.preferences.addons["cycles"].preferences.devices:
-        if d["name"] == "NVIDIA GeForce GTX 960M (Display)":
-            d["use"] = 1 # Using all devices, include GPU and CPU
-        else:
-            d["use"] = 0
+        # if d["name"] == "NVIDIA GeForce GTX 960M (Display)":
+        #     d["use"] = 1 # Using all devices, include GPU and CPU
+        # else:
+        #     d["use"] = 0
+        d["use"] = 1
         print(d["name"], d["use"])
 
     # change settings
@@ -598,9 +599,9 @@ def auto_render():
     for i in range(100):
         scene = create_walls()
         for j in range(50):
-            render_bedroom(scene, i, j)
-            render_kitchen(scene, i, j)
-            render_bathroom(scene, i, j)
+            render_bedroom(scene, i+6, j)
+            render_kitchen(scene, i+6, j)
+            render_bathroom(scene, i+6, j)
             # render_livingRoom(scene, i, j)
         clean_scene()
 
