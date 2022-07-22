@@ -599,9 +599,9 @@ def auto_render():
     for i in range(100):
         scene = create_walls()
         for j in range(50):
-            render_bedroom(scene, i+6, j)
-            render_kitchen(scene, i+6, j)
-            render_bathroom(scene, i+6, j)
+            render_bedroom(scene, i+24, j+10)
+            render_kitchen(scene, i+24, j+10)
+            render_bathroom(scene, i+24, j+10)
             # render_livingRoom(scene, i, j)
         clean_scene()
 
