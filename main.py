@@ -242,17 +242,17 @@ def render_room(furniture_const, furniture, scene):
     place_model(furniture_const[0], scene, scale=2)
     # print("check dimensions:")
     # print(last_furniture)
-    place_model(furniture_const[1], scene)
+    place_model(furniture_const[1], scene, scale=1.5)
     # print("check dimensions:")
     # print(last_furniture)
-    place_model(furniture_const[2], scene)
+    place_model(furniture_const[2], scene, scale=1.5)
     # print("check dimensions:")
     # print(last_furniture)
 
     for i in range(len(more_furniture)):
         # print("numer:")
         # print(i)
-        place_model(furniture[more_furniture[i]], scene)
+        place_model(furniture[more_furniture[i]], scene, scale=1.5)
         # print("check dimensions:")
         # print(last_furniture)
 
@@ -322,8 +322,9 @@ def auto_save(scene, i, j, loop, name):
     for empty in range(2):
         for k in range(3):
             for l in range(4):
-                for n in range(6):
-                    change_camera_place(scene, [k, l, n], i, j, empty, name)
+                change_camera_place(scene, [k, l, 0], i, j, empty, name)
+                # for n in range(6):
+                #     change_camera_place(scene, [k, l, n], i, j, empty, name)
         if empty == 0:
             delete_furniture(loop)
 
@@ -357,8 +358,8 @@ def change_camera_place(scene, number, i, j, empty, name):
 
     k_values = [[scene.PI / 2, 0, 0], [scene.PI / 2, 0, scene.PI / 2], [scene.PI / 2, 0, scene.PI]]
     l_values = [l_val[0], l_val[1], l_val[1]]
-    m_values = [0, -scene.PI/4, -2*scene.PI / 6, -scene.PI / 6, 0, 0]
-    n_values = [0, scene.PI / 6, -scene.PI / 6, -scene.PI/4, scene.PI/4, 2*scene.PI/3]
+    # m_values = [0, -scene.PI/4, -2*scene.PI / 6, -scene.PI / 6, 0, 0]
+    # n_values = [0, scene.PI / 6, -scene.PI / 6, -scene.PI/4, scene.PI/4, 2*scene.PI/3]
 
     bpy.ops.object.select_all(action='DESELECT')
     scene.camera_rotation = (0, 0, 0)
@@ -385,8 +386,10 @@ def change_camera_place(scene, number, i, j, empty, name):
     # orientation = (scene.PI / 2, 0, scene.PI / 6) # ostatniego nie zmieniac chyba ze chcesz zeby obraz byl krzywo
 
     location = l_values[number[0]][number[1]]
-    orientation = (k_values[number[0]][0] + m_values[number[2]], k_values[number[0]][1],  k_values[number[0]][2] +
-                   n_values[number[2]])
+    # orientation = (k_values[number[0]][0] + m_values[number[2]], k_values[number[0]][1],  k_values[number[0]][2] +
+    #                n_values[number[2]])
+
+    orientation = (k_values[number[0]][0], k_values[number[0]][1], k_values[number[0]][2])
 
     # -scene.PI / 2 w orientacji w z to patrzy na sciane z drzwiami
     bpy.ops.object.camera_add(location=list(location), rotation=list(orientation))
@@ -571,7 +574,7 @@ def save_image_render(scene, i, j, number, empty, name):
         # print("sprawdzmy")
         # print(len(dmap[pixel]))
         for pix in range(len(dmap[pixel])):
-            if dmap[pixel][pix] > 7:
+            if dmap[pixel][pix] > 8:
                 dmap[pixel][pix] = 100000000
             else:
                 dmap[pixel][pix] = dmap[pixel][pix]*1000
@@ -599,9 +602,9 @@ def auto_render():
     for i in range(100):
         scene = create_walls()
         for j in range(50):
-            render_bedroom(scene, i+24, j+10)
-            render_kitchen(scene, i+24, j+10)
-            render_bathroom(scene, i+24, j+10)
+            render_bedroom(scene, i+26, j+36)
+            render_kitchen(scene, i+26, j+36)
+            render_bathroom(scene, i+26, j+36)
             # render_livingRoom(scene, i, j)
         clean_scene()
 
